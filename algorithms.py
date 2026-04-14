@@ -1,94 +1,186 @@
-def fifo(pages, capacity) :
+# def fifo(pages, capacity) :
 
-    frames = []
-    pointer = 0
-    hits = 0
-    faults = 0
+#     frames = []
+#     pointer = 0
+#     hits = 0
+#     faults = 0
 
-    for page in pages :
+#     for page in pages :
 
-        if page in frames :
-            hits += 1
+#         if page in frames :
+#             hits += 1
 
-        else :
-            faults += 1
+#         else :
+#             faults += 1
 
-            if len(frames) < capacity :
-                frames.append(page)
-            else :
-                frames[pointer] = page
-                pointer = (pointer + 1) % capacity
+#             if len(frames) < capacity :
+#                 frames.append(page)
+#             else :
+#                 frames[pointer] = page
+#                 pointer = (pointer + 1) % capacity
 
-    return hits, faults
-
-
-def lru(pages, capacity) :
-
-    frames = []
-    hits = 0
-    faults = 0
-
-    for i in range(len(pages)) :
-        page = pages[i]
-
-        if page in frames :
-            hits += 1
-        else :
-            faults += 1
-
-            if len(frames) < capacity :
-                frames.append(page)
-            else :
-                # Find least recently used
-
-                lru_page = None
-                min_index = float('inf')
-
-                for f in frames :
-                    if f in pages[:i] :
-                        last_used = max([j for j in range(i) if pages[j] == f])
-                    else :
-                        last_used = -1    # never used before -> least recently used
-
-                        if last_used < min_index :
-                            min_index = last_used
-                            lru_page = f
-
-                # Replace LRU page
-                if lru_page is None :
-                    frames[0] = page           # fallback safety
-                else :
-                    frames[frames.index(lru_page)] = page
-
-    return hits, faults
+#     return hits, faults
 
 
-def optimal(pages, capacity) :
-    frames = []
-    hits = 0
-    faults = 0
+# def lru(pages, capacity) :
 
-    for i in range(len(pages)) :
-        page = pages[i]
+#     frames = []
+#     hits = 0
+#     faults = 0
 
-        if page in frames :
-            hits += 1
-        else :
-            faults += 1
+#     for i in range(len(pages)) :
+#         page = pages[i]
 
-            if len(frames) < capacity :
-                frames.append(page)
-            else :
-                future_use = {}
+#         if page in frames :
+#             hits += 1
+#         else :
+#             faults += 1
 
-                for f in frames :
-                    if f in pages[i+1:] :
-                        future_use[f] = pages[i+1:].index(f) + i + 1
-                    else :
-                        future_use[f] = float('inf')
+#             if len(frames) < capacity :
+#                 frames.append(page)
+#             else :
+#                 # Find least recently used
+
+#                 lru_page = None
+#                 min_index = float('inf')
+
+#                 for f in frames :
+#                     if f in pages[:i] :
+#                         last_used = max([j for j in range(i) if pages[j] == f])
+#                     else :
+#                         last_used = -1    # never used before -> least recently used
+
+#                         if last_used < min_index :
+#                             min_index = last_used
+#                             lru_page = f
+
+#                 # Replace LRU page
+#                 if lru_page is None :
+#                     frames[0] = page           # fallback safety
+#                 else :
+#                     frames[frames.index(lru_page)] = page
+
+#     return hits, faults
+
+
+# def optimal(pages, capacity) :
+#     frames = []
+#     hits = 0
+#     faults = 0
+
+#     for i in range(len(pages)) :
+#         page = pages[i]
+
+#         if page in frames :
+#             hits += 1
+#         else :
+#             faults += 1
+
+#             if len(frames) < capacity :
+#                 frames.append(page)
+#             else :
+#                 future_use = {}
+
+#                 for f in frames :
+#                     if f in pages[i+1:] :
+#                         future_use[f] = pages[i+1:].index(f) + i + 1
+#                     else :
+#                         future_use[f] = float('inf')
             
-                # Find page used farthest in future
-                page_to_replace = max(future_use, key=future_use.get)
-                frames[frames.index(page_to_replace)] = page
+#                 # Find page used farthest in future
+#                 page_to_replace = max(future_use, key=future_use.get)
+#                 frames[frames.index(page_to_replace)] = page
 
+#     return hits, faults
+
+
+
+# -----------------------------
+# 🧠 ALGORITHMS
+# -----------------------------
+def fifo(pages, capacity):
+    memory = []
+    faults = 0
+
+    for page in pages:
+        if page not in memory:
+            if len(memory) < capacity:
+                memory.append(page)
+            else:
+                memory.pop(0)
+                memory.append(page)
+            faults += 1
+
+    hits = len(pages) - faults
+    return hits, faults
+
+
+def fifo_steps(pages, capacity):
+    memory = []
+    steps = []
+    faults = 0
+
+    for page in pages:
+        if page not in memory:
+            if len(memory) < capacity:
+                memory.append(page)
+            else:
+                memory.pop(0)
+                memory.append(page)
+            faults += 1
+
+        # Store snapshot of memory at each step
+        steps.append(memory.copy())
+
+    hits = len(pages) - faults
+    return hits, faults, steps
+
+
+def lru(pages, capacity):
+    memory = []
+    faults = 0
+
+    for page in pages:
+        if page not in memory:
+            if len(memory) < capacity:
+                memory.append(page)
+            else:
+                memory.pop(0)
+                memory.append(page)
+            faults += 1
+        else:
+            memory.remove(page)
+            memory.append(page)
+
+    hits = len(pages) - faults
+    return hits, faults
+
+
+def optimal(pages, capacity):
+    memory = []
+    faults = 0
+
+    for i in range(len(pages)):
+        if pages[i] not in memory:
+            if len(memory) < capacity:
+                memory.append(pages[i])
+            else:
+                future = pages[i+1:]
+                replace = -1
+                farthest = -1
+
+                for j in range(len(memory)):
+                    if memory[j] not in future:
+                        replace = j
+                        break
+                    else:
+                        idx = future.index(memory[j])
+                        if idx > farthest:
+                            farthest = idx
+                            replace = j
+
+                memory[replace] = pages[i]
+            faults += 1
+
+    hits = len(pages) - faults
     return hits, faults
